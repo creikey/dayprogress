@@ -1,0 +1,163 @@
+<head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            display: table;
+            margin: 0 auto;
+        }
+
+        .container {
+            height: 100%;
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .cent {
+            /* width: 70%; */
+            /* height: 10%; */
+            width: 70vw;
+            height: 10vh;
+        }
+
+        #bar {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        #info {
+            font-size: 36;
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+        }
+
+        #settime {
+            background-color: black;
+        }
+
+        #timemodify {
+            padding-top: 10px;
+            visibility: hidden;
+        }
+
+        #endcontainer {
+            float: right;
+        }
+    </style>
+</head>
+
+
+<html>
+
+<body>
+    <div class="container">
+        <div class="cent">
+            <progress id="bar" max="1" value="0.7"></progress>
+            <p id="info">56% through today</p>
+
+            <div id="timemodify">
+                <span>
+                    <input id="starttime" type="time"> <small>Start Time</small>
+                </span>
+                <span id="endcontainer">
+                    <input id="endtime" type="time"> <small>End Time</small>
+                </span>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        function getCookie(cname) {
+            let name = cname + "=";
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+        function setCookie(cname, cvalue, exdays) {
+            const d = new Date();
+            d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+            let expires = "expires=" + d.toUTCString();
+            let setCookieTo = cname + "=" + cvalue + ";" + expires;
+            document.cookie = setCookieTo;
+        }
+
+        let adjusting = false;
+
+        let bar = document.getElementById("bar");
+        let info = document.getElementById("info");
+        let timemodify = document.getElementById("timemodify");
+        let startinput = document.getElementById("starttime");
+        let endinput = document.getElementById("endtime");
+
+        bar.onclick = () => {
+            adjusting = !adjusting;
+            if (adjusting) {
+                timemodify.style.visibility = "visible";
+            } else {
+                timemodify.style.visibility = "hidden";
+            }
+        }
+
+        function updatetime(evt, timeinput, cookiename) {
+            setCookie(cookiename, timeinput.valueAsNumber, 365);
+        }
+        startinput.addEventListener('input', (evt) => updatetime(evt, startinput, "starttime"));
+        endinput.addEventListener('input', (evt) => updatetime(evt, endinput, "endtime"));
+
+        const hoursConstant = 3600000;
+        function getHours(timevalue) {
+            return Math.floor(timevalue / hoursConstant);
+        }
+        function getMinutes(timevalue) {
+            return Math.floor((timevalue - getHours(timevalue) * hoursConstant) / 60000);
+        }
+
+        let update = () => {
+            let starttime = getCookie("starttime");
+            let endtime = getCookie("endtime");
+            if (starttime === "" || endtime === "") {
+                bar.value = 0.0;
+                info.innerText = "Click bar to set day start and end times";
+                return;
+            }
+            let dayStart = new Date(Date.now());
+            dayStart.setHours(getHours(starttime));
+            dayStart.setMinutes(getMinutes(starttime));
+            dayStart.setSeconds(0);
+
+            let dayEnd = new Date(Date.now());
+            dayEnd.setHours(getHours(endtime));
+            dayEnd.setMinutes(getMinutes(endtime));
+            dayEnd.setSeconds(0);
+
+            let now = new Date(Date.now());
+            let throughDay = (now - dayStart) / (dayEnd - dayStart);
+            bar.value = throughDay;
+            info.innerText = (throughDay * 100.0).toFixed(2) + "% Through Today";
+        }
+
+        update();
+        setInterval(update, 1000);
+    </script>
+</body>
+
+</html>
